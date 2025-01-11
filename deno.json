@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "dev": "deno run -A --watch main.ts"
+  },
+  "imports": {
+    "@oak/oak": "jsr:@oak/oak@^17.1.4",
+    "@privy-io/server-auth": "npm:@privy-io/server-auth@^1.17.2",
+    "@std/assert": "jsr:@std/assert@1"
+  },
+  "nodeModulesDir": "auto"
+}
