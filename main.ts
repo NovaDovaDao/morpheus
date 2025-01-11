@@ -33,19 +33,23 @@ const privy = new PrivyClient(
   Deno.env.get("PRIVY_APP_SECRET")!
 );
 
-io.on("connection", async (socket) => {
-  console.log(`socket ${socket.id} connected`);
+// @ts-ignore FIXME: middleware typing
+io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
     if (!token || typeof token !== "string") throw "Missing auth token";
 
     await privy.verifyAuthToken(token);
-    socket.emit("response", "👋🏽 hi, i'm dova");
+    return true;
   } catch (error) {
-    console.log(`Token verification failed with error ${error}.`);
-    socket.emit("invalid token");
-    socket.disconnect(true);
+    console.log(`Token verification failed with error. ${error}.`);
+    return next(null, false);
   }
+});
+
+io.on("connection", (socket) => {
+  console.log(`socket ${socket.id} connected`);
+  socket.emit("response", "👋🏽 hi, i'm dova");
 
   socket.on("disconnect", (reason) => {
     console.log(`socket ${socket.id} disconnected due to ${reason}`);
