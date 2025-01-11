@@ -26,6 +26,7 @@
     "jsr:@std/path@0.218": "0.218.2",
     "jsr:@std/path@1": "1.0.8",
     "npm:@privy-io/server-auth@^1.17.2": "1.17.2",
+    "npm:@solana/web3.js@^1.98.0": "1.98.0",
     "npm:@types/node@*": "22.5.4",
     "npm:path-to-regexp@6.2.1": "6.2.1",
     "npm:path-to-regexp@^6.3.0": "6.3.0"
@@ -689,7 +690,8 @@
     "dependencies": [
       "jsr:@oak/oak@^17.1.4",
       "jsr:@std/assert@1",
-      "npm:@privy-io/server-auth@^1.17.2"
+      "npm:@privy-io/server-auth@^1.17.2",
+      "npm:@solana/web3.js@^1.98.0"
     ]
   }
 }
