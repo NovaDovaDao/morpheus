@@ -26,139 +26,103 @@ log.setup({
   },
 });
 
-// Environment variable validation
-const DEFAULT_PORT = 3000;
-const MAX_PORT_ATTEMPTS = 10;
-
-async function findAvailablePort(startPort: number): Promise<number> {
-  for (let port = startPort; port < startPort + MAX_PORT_ATTEMPTS; port++) {
-    try {
-      const listener = await Deno.listen({ port });
-      listener.close();
-      return port;
-    } catch (err) {
-      if (!(err instanceof Deno.errors.AddrInUse)) {
-        throw err;
-      }
-      console.log(`Port ${port} is in use, trying next port...`);
-    }
-  }
-  throw new Error(
-    `No available ports found between ${startPort} and ${
-      startPort + MAX_PORT_ATTEMPTS
-    }`
-  );
-}
-
 // Validate environment variables
 const PRIVY_APP_ID = Deno.env.get("PRIVY_APP_ID");
 const PRIVY_APP_SECRET = Deno.env.get("PRIVY_APP_SECRET");
-
-async function startServer() {
-  try {
-    const requestedPort = Number(Deno.env.get("PORT")) || DEFAULT_PORT;
-    const port = await findAvailablePort(requestedPort);
-
-    const io = new Server({
-      cors: {
-        origin: [
-          "http://localhost:5173",
-          "http://localhost:3000",
-          "https://test.novadova.com",
-          "https://ai.novadova.com",
-          "https://novadova.com",
-        ],
-        credentials: true,
-      },
-    });
-
-    if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
-      console.error(
-        "Missing required environment variables: PRIVY_APP_ID and PRIVY_APP_SECRET must be set"
-      );
-      Deno.exit(1);
-    }
-    const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
-
-    // @ts-ignore Enhanced middleware for both Privy and token validation
-    io.use(async (socket, next) => {
-      try {
-        // 1. Verify Privy token
-        const token = socket.handshake.auth.token;
-
-        if (!token || typeof token !== "string") {
-          throw new Error("Missing auth token");
-        }
-
-        const decoded = await privy.verifyAuthToken(token);
-        const user = await privy.getUserById(decoded.userId);
-        const walletAddress = user.wallet?.address;
-        // const walletClient = user.wallet?.walletClientType;
-
-        if (!walletAddress || typeof walletAddress !== "string") {
-          throw new Error("Missing wallet address");
-        }
-
-        // 2. Verify token balance
-        const balance = await getTokenBalance(walletAddress);
-        if (!hasEnoughTokens(balance)) {
-          throw new Error(
-            `Insufficient DOVA token balance. Minimum required: ${MINIMUM_TOKEN_BALANCE.toFixed(
-              2
-            )} tokens`
-          );
-        }
-
-        // Store wallet address in socket data for future use
-        socket.data.walletAddress = walletAddress;
-        socket.data.tokenBalance = balance;
-
-        return true;
-      } catch (error) {
-        console.log(`Authentication failed: ${error}`);
-        return next(new Error(`Authentication failed: ${error}`));
-      }
-    });
-
-    // Connection handler
-    io.on("connection", (socket) => {
-      console.log(`Client connected: ${socket.id}`);
-
-      if ("walletAddress" in socket.data)
-        console.log(`Wallet address: ${socket.data.walletAddress}`);
-      if ("tokenBalance" in socket.data) {
-        // Welcome message with token balance
-        socket.emit(
-          "response",
-          `👋 Connected to Nova Dova AI - Balance: ${socket.data?.tokenBalance} DOVA`
-        );
-      }
-
-      // Handle disconnect
-      socket.on("disconnect", (reason) => {
-        console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
-      });
-
-      // Handle input messages
-      socket.on("input", (input: string) => {
-        console.log(`Received message from ${socket.id}: ${input}`);
-        socket.emit("response", `Received: ${input}`);
-      });
-    });
-
-    console.log(`Starting server on port ${port}...`);
-
-    Deno.serve({
-      port,
-      handler: io.handler(),
-      onListen: ({ port, hostname }) => {
-        console.log(`Server running on http://${hostname}:${port}`);
-      },
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    Deno.exit(1);
-  }
+if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
+  console.error(
+    "Missing required environment variables: PRIVY_APP_ID and PRIVY_APP_SECRET must be set"
+  );
+  Deno.exit(1);
 }
+const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
 
-await startServer();
+const io = new Server({
+  cors: {
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://test.novadova.com",
+      "https://ai.novadova.com",
+      "https://novadova.com",
+    ],
+    credentials: true,
+  },
+});
+
+// @ts-ignore Enhanced middleware for both Privy and token validation
+io.use(async (socket, next) => {
+  try {
+    // 1. Verify Privy token
+    const token = socket.handshake.auth.token;
+
+    if (!token || typeof token !== "string") {
+      throw new Error("Missing auth token");
+    }
+
+    const decoded = await privy.verifyAuthToken(token);
+    const user = await privy.getUserById(decoded.userId);
+    const walletAddress = user.wallet?.address;
+    // const walletClient = user.wallet?.walletClientType;
+
+    if (!walletAddress || typeof walletAddress !== "string") {
+      throw new Error("Missing wallet address");
+    }
+
+    // 2. Verify token balance
+    const balance = await getTokenBalance(walletAddress);
+    if (!hasEnoughTokens(balance)) {
+      throw new Error(
+        `Insufficient DOVA token balance. Minimum required: ${MINIMUM_TOKEN_BALANCE.toFixed(
+          2
+        )} tokens`
+      );
+    }
+
+    // Store wallet address in socket data for future use
+    socket.data.walletAddress = walletAddress;
+    socket.data.tokenBalance = balance;
+
+    return true;
+  } catch (error) {
+    console.log(`Authentication failed: ${error}`);
+    return next(new Error(`Authentication failed: ${error}`));
+  }
+});
+
+// Connection handler
+io.on("connection", (socket) => {
+  console.log(`Client connected: ${socket.id}`);
+
+  if ("walletAddress" in socket.data)
+    console.log(`Wallet address: ${socket.data.walletAddress}`);
+  if ("tokenBalance" in socket.data) {
+    // Welcome message with token balance
+    socket.emit(
+      "response",
+      `👋 Connected to Nova Dova AI - Balance: ${socket.data?.tokenBalance} DOVA`
+    );
+  }
+
+  // Handle disconnect
+  socket.on("disconnect", (reason) => {
+    console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
+  });
+
+  // Handle input messages
+  socket.on("input", (input: string) => {
+    console.log(`Received message from ${socket.id}: ${input}`);
+    socket.emit("response", `Received: ${input}`);
+  });
+});
+
+const port = parseInt(Deno.env.get("PORT")!);
+console.log(`Starting server on port ${port}...`);
+
+Deno.serve({
+  port,
+  handler: io.handler(),
+  onListen: ({ port, hostname }) => {
+    console.log(`Server running on http://${hostname}:${port}`);
+  },
+});
