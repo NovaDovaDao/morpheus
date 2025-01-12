@@ -13,15 +13,10 @@ const redis = createLazyClient({
   password,
 });
 
-export const publishMessage = async (userId: string, message: string) => {
+export const publishMessage = (userId: string, message: string) => {
   const id = uuid.v1.generate();
   const channel = `chat:message:${id}`;
-  const response = await redis.rpush(
-    channel,
-    JSON.stringify({ userId, message })
-  );
-  console.log(channel, response);
-  return response;
+  return redis.rpush(channel, JSON.stringify({ userId, message }));
 };
 
 export const responseSubscription = (userId: string) => {
