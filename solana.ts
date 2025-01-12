@@ -44,18 +44,16 @@ export async function getTokenBalance(walletAddress: string): Promise<string> {
     let totalBalance = new BigDenary(0);
     for (const account of accounts.value) {
       const parsedInfo = account.account.data.parsed.info;
-      totalBalance = totalBalance.add(parsedInfo.tokenAmount.amount);
+      totalBalance = totalBalance.add(parsedInfo.tokenAmount.uiAmountString);
     }
 
     // Update cache
     tokenBalanceCache.set(walletAddress, {
-      balance: totalBalance.toString(),
+      balance: totalBalance.toFixed(2),
       timestamp: now,
     });
 
-    console.log(totalBalance);
-
-    return totalBalance.toString();
+    return totalBalance.toFixed(2);
   } catch (error) {
     console.error("Error getting token balance:", error);
     throw new Error("Failed to verify token balance");

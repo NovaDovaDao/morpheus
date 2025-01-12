@@ -93,15 +93,13 @@ io.use(async (socket, next) => {
 // Connection handler
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.id}`);
+  // Welcome message
+  socket.emit("response", "👋 Connected to Nova Dova AI");
 
   if ("walletAddress" in socket.data)
     console.log(`Wallet address: ${socket.data.walletAddress}`);
   if ("tokenBalance" in socket.data) {
-    // Welcome message with token balance
-    socket.emit(
-      "response",
-      `👋 Connected to Nova Dova AI - Balance: ${socket.data?.tokenBalance} DOVA`
-    );
+    socket.emit("balance", socket.data.tokenBalance);
   }
 
   // Handle disconnect
