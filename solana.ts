@@ -1,12 +1,14 @@
 import { Connection, PublicKey } from "@solana/web3.js";
+import { BigDenary } from "https://deno.land/x/bigdenary/mod.ts";
 
 // Configure constants
 const DOVA_TOKEN_ADDRESS = Deno.env.get("DOVA_TOKEN_ADDRESS");
 const TOKEN_BALANCE_CACHE_TTL = 30000; // 30 seconds cache TTL
+export const MINIMUM_TOKEN_BALANCE = new BigDenary("100000");
 
 // Cache structure for token balances
 interface TokenBalanceCache {
-  balance: bigint;
+  balance: string;
   timestamp: number;
 }
 const tokenBalanceCache = new Map<string, TokenBalanceCache>();
@@ -18,7 +20,7 @@ const connection = new Connection(
 );
 
 // Function to get token balance with caching
-export async function getTokenBalance(walletAddress: string): Promise<bigint> {
+export async function getTokenBalance(walletAddress: string): Promise<string> {
   try {
     // Check cache first
     const cached = tokenBalanceCache.get(walletAddress);
@@ -39,23 +41,26 @@ export async function getTokenBalance(walletAddress: string): Promise<bigint> {
     );
 
     // Calculate total balance across all accounts
-    let totalBalance = 0n;
+    let totalBalance = new BigDenary(0);
     for (const account of accounts.value) {
       const parsedInfo = account.account.data.parsed.info;
-      totalBalance += BigInt(parsedInfo.tokenAmount.amount);
+      totalBalance = totalBalance.add(parsedInfo.tokenAmount.amount);
     }
 
     // Update cache
     tokenBalanceCache.set(walletAddress, {
-      balance: totalBalance,
+      balance: totalBalance.toString(),
       timestamp: now,
     });
 
     console.log(totalBalance);
 
-    return totalBalance;
+    return totalBalance.toString();
   } catch (error) {
     console.error("Error getting token balance:", error);
     throw new Error("Failed to verify token balance");
   }
 }
+
+export const hasEnoughTokens = (balance: string) =>
+  MINIMUM_TOKEN_BALANCE.lessThan(balance);

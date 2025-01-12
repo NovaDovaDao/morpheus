@@ -3,9 +3,11 @@ import "jsr:@std/dotenv/load";
 import * as log from "https://deno.land/std@0.166.0/log/mod.ts";
 import { Server } from "https://deno.land/x/socket_io@0.2.1/mod.ts";
 import { PrivyClient } from "@privy-io/server-auth";
-import { getTokenBalance } from "./solana.ts";
-
-const MINIMUM_TOKEN_BALANCE = 100000n * BigInt(1e9); // 100,000 tokens with 9 decimals
+import {
+  getTokenBalance,
+  hasEnoughTokens,
+  MINIMUM_TOKEN_BALANCE,
+} from "./solana.ts";
 
 // Configure logging
 log.setup({
@@ -99,11 +101,11 @@ async function startServer() {
 
         // 2. Verify token balance
         const balance = await getTokenBalance(walletAddress);
-        if (balance < MINIMUM_TOKEN_BALANCE) {
+        if (!hasEnoughTokens(balance)) {
           throw new Error(
-            `Insufficient DOVA token balance. Minimum required: ${
-              MINIMUM_TOKEN_BALANCE / BigInt(1e9)
-            } tokens`
+            `Insufficient DOVA token balance. Minimum required: ${MINIMUM_TOKEN_BALANCE.toFixed(
+              2
+            )} tokens`
           );
         }
 
@@ -111,7 +113,7 @@ async function startServer() {
         socket.data.walletAddress = walletAddress;
         socket.data.tokenBalance = balance;
 
-        return next();
+        return true;
       } catch (error) {
         console.log(`Authentication failed: ${error}`);
         return next(new Error(`Authentication failed: ${error}`));
@@ -121,16 +123,16 @@ async function startServer() {
     // Connection handler
     io.on("connection", (socket) => {
       console.log(`Client connected: ${socket.id}`);
-      // console.log(`Wallet address: ${address}`);
-      // console.log(`Token balance: ${socket.data.tokenBalance}`);
 
-      // Welcome message with token balance
-      socket.emit(
-        "response",
-        `👋 Connected to Nova Dova AI - Balance: ${
-          // socket.data.tokenBalance / BigInt(1e9)
-        } DOVA`
-      );
+      if ("walletAddress" in socket.data)
+        console.log(`Wallet address: ${socket.data.walletAddress}`);
+      if ("tokenBalance" in socket.data) {
+        // Welcome message with token balance
+        socket.emit(
+          "response",
+          `👋 Connected to Nova Dova AI - Balance: ${socket.data?.tokenBalance} DOVA`
+        );
+      }
 
       // Handle disconnect
       socket.on("disconnect", (reason) => {
