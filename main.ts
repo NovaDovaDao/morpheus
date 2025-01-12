@@ -8,6 +8,7 @@ import {
   hasEnoughTokens,
   MINIMUM_TOKEN_BALANCE,
 } from "./solana.ts";
+import { publishMessage } from "./redis.ts";
 
 // Configure logging
 log.setup({
@@ -37,7 +38,29 @@ if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
 }
 const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
 
-const io = new Server({
+interface ClientToServerEvents {
+  input: (message: string) => void;
+}
+
+interface ServerToClientEvents {
+  response: (message: string) => void;
+  balance: (value?: string) => void;
+}
+
+// deno-lint-ignore no-empty-interface
+interface InterServerEvents {}
+
+interface SocketData {
+  walletAddress: string;
+  tokenBalance: string;
+}
+
+const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>({
   cors: {
     origin: [
       "http://localhost:5173",
@@ -51,7 +74,7 @@ const io = new Server({
 });
 
 // @ts-ignore Enhanced middleware for both Privy and token validation
-io.use(async (socket, next) => {
+io.use(async (socket) => {
   try {
     // 1. Verify Privy token
     const token = socket.handshake.auth.token;
@@ -86,7 +109,7 @@ io.use(async (socket, next) => {
     return true;
   } catch (error) {
     console.log(`Authentication failed: ${error}`);
-    return next(new Error(`Authentication failed: ${error}`));
+    return false;
   }
 });
 
@@ -96,11 +119,8 @@ io.on("connection", (socket) => {
   // Welcome message
   socket.emit("response", "👋 Connected to Nova Dova AI");
 
-  if ("walletAddress" in socket.data)
-    console.log(`Wallet address: ${socket.data.walletAddress}`);
-  if ("tokenBalance" in socket.data) {
-    socket.emit("balance", socket.data.tokenBalance);
-  }
+  console.log(`Wallet address: ${socket.data.walletAddress}`);
+  socket.emit("balance", socket.data.tokenBalance);
 
   // Handle disconnect
   socket.on("disconnect", (reason) => {
@@ -108,9 +128,15 @@ io.on("connection", (socket) => {
   });
 
   // Handle input messages
-  socket.on("input", (input: string) => {
+  socket.on("input", async (input: string) => {
     console.log(`Received message from ${socket.id}: ${input}`);
-    socket.emit("response", `Received: ${input}`);
+    if (socket.data.walletAddress) {
+      await publishMessage(socket.data.walletAddress, input);
+      socket.emit("response", `Received: ${input}`);
+      return;
+    }
+
+    socket.emit("response", "Unauthorized request");
   });
 });
 
