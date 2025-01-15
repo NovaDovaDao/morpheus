@@ -1,5 +1,6 @@
 // main.ts
 import "jsr:@std/dotenv/load";
+import * as uuid from "jsr:@std/uuid";
 import * as log from "https://deno.land/std@0.166.0/log/mod.ts";
 import { Server } from "https://deno.land/x/socket_io@0.2.1/mod.ts";
 import { PrivyClient } from "@privy-io/server-auth";
@@ -8,7 +9,7 @@ import {
   hasEnoughTokens,
   MINIMUM_TOKEN_BALANCE,
 } from "./solana.ts";
-import { publishMessage } from "./redis.ts";
+import { requireRedis } from "./redis.ts";
 
 // Configure logging
 log.setup({
@@ -37,6 +38,10 @@ if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
   Deno.exit(1);
 }
 const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
+const [pubClient, subClient] = await Promise.all([
+  requireRedis(),
+  requireRedis(),
+]);
 
 interface ClientToServerEvents {
   input: (message: string) => void;
@@ -51,6 +56,7 @@ interface ServerToClientEvents {
 interface InterServerEvents {}
 
 interface SocketData {
+  userId: string;
   walletAddress: string;
   tokenBalance: string;
 }
@@ -103,19 +109,27 @@ io.use(async (socket) => {
     }
 
     // Store wallet address in socket data for future use
+    socket.data.userId = decoded.userId;
     socket.data.walletAddress = walletAddress;
     socket.data.tokenBalance = balance;
 
     return true;
   } catch (error) {
     console.log(`Authentication failed: ${error}`);
-    return false;
+    throw "Authentication failed";
   }
 });
+
+const subscriptions = new Map<string, Set<string>>();
 
 // Connection handler
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.id}`);
+  if (socket.data.userId && !subscriptions.has(socket.data.userId)) {
+    subscriptions.set(socket.data.userId, new Set());
+  }
+  subscriptions.get(socket.data.userId!)?.add(socket.id);
+
   // Welcome message
   socket.emit("response", "👋 Connected to Nova Dova AI");
 
@@ -125,20 +139,48 @@ io.on("connection", (socket) => {
   // Handle disconnect
   socket.on("disconnect", (reason) => {
     console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
+    if (socket.data.userId && subscriptions.has(socket.data.userId)) {
+      subscriptions.get(socket.data.userId!)?.delete(socket.id);
+      if (subscriptions.get(socket.data.userId!)?.size === 0)
+        subscriptions.delete(socket.data.userId);
+    }
   });
 
   // Handle input messages
   socket.on("input", async (input: string) => {
     console.log(`Received message from ${socket.id}: ${input}`);
-    if (socket.data.walletAddress) {
-      await publishMessage(socket.data.walletAddress, input);
-      socket.emit("response", `Received: ${input}`);
+    if (socket.data.userId) {
+      const messageId = uuid.v1.generate();
+      const channel = "chat_input";
+      const queueResponse = await pubClient.publish(
+        channel,
+        JSON.stringify({
+          userId: socket.data.userId,
+          messageId,
+          message: input,
+        })
+      );
+      socket.emit("response", `Received: ${queueResponse}`);
       return;
     }
 
     socket.emit("response", "Unauthorized request");
   });
 });
+
+// Subscribe to Redis channel to receive worker updates
+const channel = "chat_response";
+const sub = await subClient.subscribe(channel);
+(async () => {
+  for await (const { message } of sub.receive()) {
+    const { userId, messageId } = JSON.parse(message);
+    if (subscriptions.has(userId)) {
+      for (const socketId of subscriptions.get(userId)!) {
+        io.to(socketId).emit("response", messageId);
+      }
+    }
+  }
+})();
 
 const port = parseInt(Deno.env.get("PORT")!);
 console.log(`Starting server on port ${port}...`);

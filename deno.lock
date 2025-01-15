@@ -2,8 +2,6 @@
   "version": "4",
   "specifiers": {
     "jsr:@oak/commons@0.7": "0.7.0",
-    "jsr:@oak/commons@1": "1.0.0",
-    "jsr:@oak/oak@^17.1.4": "17.1.4",
     "jsr:@std/assert@0.218": "0.218.2",
     "jsr:@std/assert@1": "1.0.10",
     "jsr:@std/assert@~0.218.2": "0.218.2",
@@ -18,54 +16,25 @@
     "jsr:@std/crypto@^1.0.3": "1.0.3",
     "jsr:@std/dotenv@*": "0.225.2",
     "jsr:@std/encoding@0.218": "0.218.2",
-    "jsr:@std/encoding@1": "1.0.6",
-    "jsr:@std/encoding@^1.0.5": "1.0.6",
     "jsr:@std/encoding@~0.218.2": "0.218.2",
     "jsr:@std/http@0.218": "0.218.2",
-    "jsr:@std/http@1": "1.0.12",
     "jsr:@std/internal@^1.0.5": "1.0.5",
     "jsr:@std/io@0.218": "0.218.2",
     "jsr:@std/io@0.224.5": "0.224.5",
     "jsr:@std/media-types@0.218": "0.218.2",
-    "jsr:@std/media-types@1": "1.1.0",
     "jsr:@std/path@0.218": "0.218.2",
-    "jsr:@std/path@1": "1.0.8",
     "jsr:@std/uuid@*": "1.0.4",
     "npm:@privy-io/server-auth@^1.17.2": "1.17.2",
     "npm:@solana/web3.js@^1.98.0": "1.98.0",
     "npm:@types/node@*": "22.5.4",
-    "npm:path-to-regexp@6.2.1": "6.2.1",
-    "npm:path-to-regexp@^6.3.0": "6.3.0"
+    "npm:path-to-regexp@6.2.1": "6.2.1"
   },
   "jsr": {
     "@oak/commons@0.7.0": {
       "integrity": "4bd889b3dc9ddac1b602034d88c137f06de7078775961b51081beb5f175c120b",
       "dependencies": [
         "jsr:@std/assert@0.218",
-        "jsr:@std/media-types@0.218"
-      ]
-    },
-    "@oak/commons@1.0.0": {
-      "integrity": "49805b55603c3627a9d6235c0655aa2b6222d3036b3a13ff0380c16368f607ac",
-      "dependencies": [
-        "jsr:@std/assert@1",
-        "jsr:@std/bytes@1",
-        "jsr:@std/crypto@1",
-        "jsr:@std/encoding@1",
-        "jsr:@std/http@1",
-        "jsr:@std/media-types@1"
-      ]
-    },
-    "@oak/oak@17.1.4": {
-      "integrity": "60530b582bf276ff741e39cc664026781aa08dd5f2bc5134d756cc427bf2c13e",
-      "dependencies": [
-        "jsr:@oak/commons@1",
-        "jsr:@std/assert@1",
-        "jsr:@std/bytes@1",
-        "jsr:@std/http@1",
-        "jsr:@std/media-types@1",
-        "jsr:@std/path@1",
-        "npm:path-to-regexp@^6.3.0"
+        "jsr:@std/media-types"
       ]
     },
     "@std/assert@0.218.2": {
@@ -102,20 +71,11 @@
     "@std/encoding@0.218.2": {
       "integrity": "da55a763c29bf0dbf06fd286430b358266eb99c28789d89fe9a3e28edecb8d8e"
     },
-    "@std/encoding@1.0.6": {
-      "integrity": "ca87122c196e8831737d9547acf001766618e78cd8c33920776c7f5885546069"
-    },
     "@std/http@0.218.2": {
       "integrity": "54223b62702e665b9dab6373ea2e51235e093ef47228d21cfa0469ee5ac75c9b",
       "dependencies": [
         "jsr:@std/assert@~0.218.2",
         "jsr:@std/encoding@~0.218.2"
-      ]
-    },
-    "@std/http@1.0.12": {
-      "integrity": "85246d8bfe9c8e2538518725b158bdc31f616e0869255f4a8d9e3de919cab2aa",
-      "dependencies": [
-        "jsr:@std/encoding@^1.0.5"
       ]
     },
     "@std/internal@1.0.5": {
@@ -136,17 +96,11 @@
     "@std/media-types@0.218.2": {
       "integrity": "1ed3bd2a05e44bad3fc2bab1767d0ce7f2fd68baee62a980751ce51633acb788"
     },
-    "@std/media-types@1.1.0": {
-      "integrity": "c9d093f0c05c3512932b330e3cc1fe1d627b301db33a4c2c2185c02471d6eaa4"
-    },
     "@std/path@0.218.2": {
       "integrity": "b568fd923d9e53ad76d17c513e7310bda8e755a3e825e6289a0ce536404e2662",
       "dependencies": [
         "jsr:@std/assert@~0.218.2"
       ]
-    },
-    "@std/path@1.0.8": {
-      "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
     },
     "@std/uuid@1.0.4": {
       "integrity": "f4233149cc8b4753cc3763fd83a7c4101699491f55c7be78dc7b30281946d7a0",
@@ -417,9 +371,6 @@
     },
     "path-to-regexp@6.2.1": {
       "integrity": "sha512-JLyh7xT1kizaEvcaXOQwOc2/Yhw6KZOvPf1S8401UyLk86CU79LN3vl7ztXGm/pZ+YjoyAJ4rxmHwbkBXJX+yw=="
-    },
-    "path-to-regexp@6.3.0": {
-      "integrity": "sha512-Yhpw4T9C6hPpgPeA28us07OJeqZ5EzQTkbfwuhsUg0c237RomFoETJgmp2sa3F/41gfLE6G5cqcYwznmeEeOlQ=="
     },
     "querystringify@2.2.0": {
       "integrity": "sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ=="
@@ -740,7 +691,6 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@oak/oak@^17.1.4",
       "jsr:@std/assert@1",
       "npm:@privy-io/server-auth@^1.17.2",
       "npm:@solana/web3.js@^1.98.0"
