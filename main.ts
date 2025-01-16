@@ -1,6 +1,5 @@
 // main.ts
 import "jsr:@std/dotenv/load";
-import * as uuid from "jsr:@std/uuid";
 import * as log from "https://deno.land/std@0.166.0/log/mod.ts";
 import { Server } from "https://deno.land/x/socket_io@0.2.1/mod.ts";
 import { PrivyClient } from "@privy-io/server-auth";
@@ -79,6 +78,9 @@ const io = new Server<
   },
 });
 
+const REST_API_URL = Deno.env.get("REST_API_URL");
+if (!REST_API_URL) throw "Missing REST_API_URL env var";
+
 // @ts-ignore Enhanced middleware for both Privy and token validation
 io.use(async (socket) => {
   try {
@@ -150,17 +152,15 @@ io.on("connection", (socket) => {
   socket.on("input", async (input: string) => {
     console.log(`Received message from ${socket.id}: ${input}`);
     if (socket.data.userId) {
-      const messageId = uuid.v1.generate();
-      const channel = "chat_input";
-      const queueResponse = await pubClient.publish(
-        channel,
-        JSON.stringify({
+      const response = await fetch(new URL("/process-message", REST_API_URL), {
+        method: "POST",
+        body: JSON.stringify({
           userId: socket.data.userId,
-          messageId,
-          message: input,
-        })
-      );
-      socket.emit("response", `Received: ${queueResponse}`);
+          content: input,
+          sender: "user",
+        }),
+      });
+      socket.emit("response", `Received: ${response.statusText}`);
       return;
     }
 
