@@ -58,6 +58,7 @@ interface SocketData {
   tokenBalance: string;
 }
 
+const origin = Deno.env.get("ORIGIN")?.split(",") ?? [];
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
@@ -65,13 +66,7 @@ const io = new Server<
   SocketData
 >({
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://test.novadova.com",
-      "https://ai.novadova.com",
-      "https://novadova.com",
-    ],
+    origin,
     credentials: true,
   },
 });
