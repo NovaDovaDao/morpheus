@@ -59,6 +59,7 @@ interface SocketData {
 }
 
 const origin = Deno.env.get("ORIGIN")?.split(",") ?? [];
+console.log("origin", origin);
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
