@@ -4,7 +4,7 @@ import { BigDenary } from "https://deno.land/x/bigdenary/mod.ts";
 // Configure constants
 const DOVA_TOKEN_ADDRESS = Deno.env.get("DOVA_TOKEN_ADDRESS");
 const TOKEN_BALANCE_CACHE_TTL = 30000; // 30 seconds cache TTL
-export const MINIMUM_TOKEN_BALANCE = new BigDenary("100000");
+export const MINIMUM_TOKEN_BALANCE = new BigDenary("1000");
 
 // Cache structure for token balances
 interface TokenBalanceCache {
