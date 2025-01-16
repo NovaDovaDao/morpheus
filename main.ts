@@ -130,9 +130,6 @@ io.on("connection", (socket) => {
   }
   subscriptions.get(socket.data.userId!)?.add(socket.id);
 
-  // Welcome message
-  socket.emit("response", "👋 Connected to Nova Dova AI");
-
   console.log(`Wallet address: ${socket.data.walletAddress}`);
   socket.emit("balance", socket.data.tokenBalance);
 
@@ -165,7 +162,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    socket.emit("response", "Unauthorized request");
+    socket.emit("ack", 403);
   });
 });
 
