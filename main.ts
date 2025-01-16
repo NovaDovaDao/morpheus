@@ -44,6 +44,7 @@ interface ClientToServerEvents {
 }
 
 interface ServerToClientEvents {
+  ack: (code: number) => void;
   response: (message: string) => void;
   balance: (value?: string) => void;
 }
@@ -160,7 +161,7 @@ io.on("connection", (socket) => {
           "x-ghost-token": Deno.env.get("GHOST_TOKEN"),
         },
       });
-      socket.emit("response", `Received: ${response.statusText}`);
+      socket.emit("ack", response.status);
       return;
     }
 
