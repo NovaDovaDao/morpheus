@@ -37,10 +37,7 @@ if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
   Deno.exit(1);
 }
 const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
-const [pubClient, subClient] = await Promise.all([
-  requireRedis(),
-  requireRedis(),
-]);
+const subClient = await requireRedis();
 
 interface ClientToServerEvents {
   input: (message: string) => void;
@@ -159,6 +156,9 @@ io.on("connection", (socket) => {
           content: input,
           sender: "user",
         }),
+        headers: {
+          "x-ghost-token": Deno.env.get("GHOST_TOKEN"),
+        },
       });
       socket.emit("response", `Received: ${response.statusText}`);
       return;

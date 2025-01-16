@@ -1,7 +1,7 @@
 {
   "tasks": {
     "dev": "deno run -A --watch main.ts",
-    "deploy": "deployctl deploy"
+    "deploy": "deployctl deploy --env-file=.env"
   },
   "imports": {
     "@privy-io/server-auth": "npm:@privy-io/server-auth@^1.17.2",
