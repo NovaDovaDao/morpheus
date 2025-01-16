@@ -172,8 +172,8 @@ io.on("connection", (socket) => {
 const channel = "chat_response";
 const sub = await subClient.subscribe(channel);
 (async () => {
-  for await (const { message } of sub.receive()) {
-    const { userId, messageId } = JSON.parse(message);
+  for await (const data of sub.receive()) {
+    const { userId, messageId } = JSON.parse(data.message);
     if (subscriptions.has(userId)) {
       for (const socketId of subscriptions.get(userId)!) {
         io.to(socketId).emit("response", messageId);
